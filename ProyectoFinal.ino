@@ -1,33 +1,55 @@
 #include <Servo.h>
-//Definicion de los servos
-Servo servo1;
-Servo servo2;
-int eje1=90;
-int eje2=90;
-void setup(){  
-  servo1.attach(7);
-  servo2.attach(6);
-  servo1.write(90);
-  servo2.write(90);
+
+class BrazoRobot {
+  private:
+    Servo servoBase;
+    Servo servoHombro;
+    Servo servoCodo;
+    
+    const int pinBase = 10;
+    const int pinHombro = 11;
+    const int pinCodo = 12;
+
+  public:
+    void configurar() {
+      servoBase.attach(pinBase);
+      servoHombro.attach(pinHombro);
+      servoCodo.attach(pinCodo);
+      
+      Serial.begin(9600);
+    }
+
+    void bucle() {
+      if (Serial.available() > 0) {
+        String entrada = Serial.readStringUntil('\n');
+        int primerIndiceComa = entrada.indexOf(',');
+        int segundoIndiceComa = entrada.indexOf(',', primerIndiceComa + 1);
+
+        if (primerIndiceComa != -1 && segundoIndiceComa != -1) {
+          int anguloBase = entrada.substring(0, primerIndiceComa).toInt();
+          int anguloHombro = entrada.substring(primerIndiceComa + 1, segundoIndiceComa).toInt();
+          int anguloCodo = entrada.substring(segundoIndiceComa + 1).toInt();
+          
+          anguloBase = constrain(anguloBase, 0, 180);
+          anguloHombro = constrain(anguloHombro, 15, 165);
+          anguloCodo = constrain(anguloCodo, 0, 180);
+          
+          servoBase.write(anguloBase);
+          servoHombro.write(anguloHombro);
+          servoCodo.write(anguloCodo);
+        } else {
+          Serial.println("Error: Entrada malformada");
+        }
+      }
+    }
+};
+
+BrazoRobot brazoRobot;
+
+void setup() {
+  brazoRobot.configurar();
 }
-void loop(){
-  //SERVO 1
-  if (analogRead(0)<200 && eje1<180){
-    eje1++;
-    servo1.write(eje1);
-  }
-  if (analogRead(0)>700 && eje1>0){
-    eje1--;
-    servo1.write(eje1);
-  }
-  //SERVO 2
-  if (analogRead(1)<200 && eje2<180){
-    eje2++;
-    servo2.write(eje2);
-  }
-  if (analogRead(1)>700 && eje2>0){
-    eje2--;
-    servo2.write(eje2);
-  }
-  delay(15);
+
+void loop() {
+  brazoRobot.bucle();
 }
